@@ -3,7 +3,11 @@
 #	imagemagick (install using brew, etc.)
 
 SHELL=bash
-TARGET=test
+
+TARGET=README
+
+# in case source Markdown is in different folder
+SRCDIR=
 
 LATEX_TEMPLATE=kramdown-templates/latex.erb
 HTML_TEMPLATE=kramdown-templates/html.erb
@@ -11,7 +15,6 @@ HTML_TEMPLATE=kramdown-templates/html.erb
 all: pdf open cleanlogs
 verbose: pdf open openlog
 clean: cleantemps cleanlogs cleanoutput
-run: all
 
 
 PLATFORM=$(shell ([[ -n "$(OSTYPE)" ]] && echo $(OSTYPE) || echo $(OS) ) | grep -o '[^0-9\-]\+')
@@ -24,21 +27,21 @@ else
 	OPEN=$(shell xdg-open --version &>/dev/null && echo xdg-open || echo open)
 endif
 
-$(TARGET).tex: $(TARGET).md
-	kramdown -o latex --template $(LATEX_TEMPLATE) $(TARGET).md > $(TARGET).tex
+$(TARGET).tex: $(SRCDIR)$(TARGET).md
+	kramdown -o latex --template $(LATEX_TEMPLATE) $(SRCDIR)$(TARGET).md > $(TARGET).tex
 
 $(TARGET).pdf: $(TARGET).tex
 	xelatex $(TARGET).tex
 
 $(TARGET).html:
-	kramdown -o html --template $(HTML_TEMPLATE) $(TARGET).md > $(TARGET).html
+	kramdown -o html --template $(HTML_TEMPLATE) $(SRCDIR)$(TARGET).md > $(TARGET).html
 
 pdf: $(TARGET).pdf cleantemps
 	touch $(TARGET).pdf
 
 # produces a series of pngs if multipage document
 png: pdf
-	convert -density 300 $(TARGET).pdf $(TARGET).png
+	convert -background white -flatten -density 300 $(TARGET).pdf $(TARGET).png
 
 html: $(TARGET).html
 	touch $(TARGET).html
@@ -72,3 +75,4 @@ remove-deps:
 	gem uninstall kramdown
 	gem uninstall prawn prawn-table
 	
+.PHONY: all verbose run pdf png html open openlog clean cleantemps cleanlogs cleanoutput deps remove-deps
